@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+@keyframes scanmove {0%{top:6%}50%{top:88%}100%{top:6%}}
+@keyframes notifIn {from{transform:translateY(-130%);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes toastIn {from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+</style>
+</helmet>
+
+<div style="font-family:'Pretendard Variable',Pretendard,-apple-system,sans-serif;width:392px;height:812px;background:{{ t.bezel }};border-radius:46px;padding:11px;box-sizing:border-box;box-shadow:0 30px 60px rgba(0,0,0,0.28);">
+<div style="position:relative;width:100%;height:100%;background:{{ t.bg }};border-radius:36px;overflow:hidden;display:flex;flex-direction:column;">
+
+  <!-- status bar -->
+  <div style="height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px;color:{{ t.statusColor }};font-size:13px;font-weight:700;">
+    <span>9:41</span>
+    <span style="display:flex;align-items:center;gap:7px;">
+      <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="4.5" y="5.5" width="3" height="6.5" rx="1"/><rect x="9" y="3" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.4c2.2 0 4.2.85 5.7 2.25l1.3-1.4C13.2 1.5 10.7.5 8 .5S2.8 1.5.9 3.25l1.3 1.4A8.3 8.3 0 0 1 8 2.4Zm0 3.5c1.25 0 2.4.5 3.25 1.3l1.3-1.4A6.6 6.6 0 0 0 8 3.4a6.6 6.6 0 0 0-4.55 2.4l1.3 1.4A4.7 4.7 0 0 1 8 5.9Zm0 3.4 2-2.15a3 3 0 0 0-4 0L8 9.3Z"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="currentColor" opacity="0.5"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="currentColor"/><rect x="23" y="4" width="2" height="4" rx="1" fill="currentColor"/></svg>
+    </span>
+  </div>
+
+  <!-- scrollable content -->
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+
+    <!-- ============ HOME ============ -->
+    <sc-if value="{{ scrHome }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 18px 6px;">
+        <div style="display:flex;align-items:center;gap:9px;">
+          <span style="font-size:22px;">{{ t.iconEmoji }}</span>
+          <span style="font-weight:800;font-size:21px;letter-spacing:-0.02em;color:{{ t.text }};">냉장고 지킴이</span>
+        </div>
+        <div onClick="{{ onBell }}" style="position:relative;width:40px;height:40px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer;background:{{ t.card }};border:{{ t.cardBd }};color:{{ t.text }};">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span style="position:absolute;top:9px;right:10px;width:7px;height:7px;border-radius:50%;background:{{ t.exp_fg }};"></span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;padding:8px 16px 4px;">
+        <sc-for list="{{ stats }}" as="st" hint-placeholder-count="3">
+          <div style="flex:1;text-align:center;padding:15px 6px;border-radius:16px;background:{{ st.bg }};">
+            <div style="font-size:25px;font-weight:800;line-height:1;color:{{ st.fg }};">{{ st.value }}</div>
+            <div style="margin-top:6px;font-size:12px;font-weight:600;color:{{ t.sub }};">{{ st.label }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display:flex;gap:8px;padding:10px 16px 6px;overflow-x:auto;">
+        <sc-for list="{{ filterChips }}" as="chip" hint-placeholder-count="4">
+          <div onClick="{{ chip.onClick }}" style="flex:none;padding:8px 15px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;background:{{ chip.bg }};color:{{ chip.fg }};border:{{ chip.bd }};">{{ chip.label }}</div>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:64px 32px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:11px;">
+          <div style="font-size:62px;">🧊</div>
+          <div style="font-weight:800;font-size:18px;color:{{ t.text }};">여기엔 아직 없어요</div>
+          <div style="font-size:13.5px;line-height:1.65;color:{{ t.sub }};">+ 버튼으로 식품을 추가해 보세요.<br>바코드나 유통기한 촬영으로 빠르게 등록돼요.</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ hasItems }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:10px;padding:6px 16px 120px;">
+          <sc-for list="{{ visible }}" as="item" hint-placeholder-count="6">
+            <div onClick="{{ item.onOpen }}" style="display:flex;align-items:center;gap:14px;padding:13px;border-radius:{{ t.radius }};background:{{ t.card }};border:{{ t.cardBd }};box-shadow:{{ t.cardSh }};cursor:pointer;">
+              <div style="width:48px;height:48px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:14px;background:{{ t.accentSoft }};font-size:25px;">{{ item.emoji }}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-weight:700;font-size:16px;color:{{ t.text }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ item.name }}</div>
+                <div style="margin-top:3px;font-size:12.5px;color:{{ t.sub }};">{{ item.metaLine }}</div>
+              </div>
+              <div style="flex:none;padding:7px 12px;border-radius:11px;font-weight:800;font-size:12.5px;background:{{ item.badgeBg }};color:{{ item.badgeFg }};">{{ item.badgeText }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+    </sc-if>
+
+    <!-- ============ DETAIL ============ -->
+    <sc-if value="{{ scrDetail }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:4px;padding:8px 12px;">
+        <div onClick="{{ onBack }}" style="width:40px;height:40px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer;color:{{ t.text }};">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </div>
+        <span style="font-weight:700;font-size:17px;color:{{ t.text }};">{{ sel.name }}</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;align-items:center;gap:11px;padding:14px 0 22px;">
+        <div style="width:98px;height:98px;border-radius:28px;background:{{ t.accentSoft }};display:flex;align-items:center;justify-content:center;font-size:52px;">{{ sel.emoji }}</div>
+        <div style="font-weight:800;font-size:22px;color:{{ t.text }};">{{ sel.name }}</div>
+        <div style="padding:8px 16px;border-radius:13px;font-weight:800;font-size:15px;background:{{ sel.badgeBg }};color:{{ sel.badgeFg }};">{{ sel.badgeText }}</div>
+      </div>
+
+      <div style="margin:0 16px;padding:4px 18px;border-radius:{{ t.radius }};background:{{ t.card }};border:{{ t.cardBd }};box-shadow:{{ t.cardSh }};">
+        <sc-for list="{{ tiles }}" as="row" hint-placeholder-count="5">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 0;border-bottom:{{ row.bd }};">
+            <span style="font-size:13.5px;color:{{ t.sub }};white-space:nowrap;">{{ row.label }}</span>
+            <span style="font-size:14.5px;font-weight:600;color:{{ t.text }};text-align:right;">{{ row.value }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div onClick="{{ onRemove }}" style="margin:22px 16px 30px;height:52px;border-radius:16px;background:{{ t.accentSoft }};color:{{ t.accent }};display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:15px;cursor:pointer;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        소진 / 삭제
+      </div>
+    </sc-if>
+
+    <!-- ============ ADD ============ -->
+    <sc-if value="{{ scrAdd }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:4px;padding:8px 12px;">
+        <div onClick="{{ onBack }}" style="width:40px;height:40px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer;color:{{ t.text }};">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </div>
+        <span style="font-weight:800;font-size:18px;color:{{ t.text }};">식품 추가</span>
+      </div>
+
+      <div style="display:flex;gap:12px;padding:6px 16px 2px;">
+        <div onClick="{{ onScanBarcode }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;padding:18px 8px;border-radius:16px;background:{{ t.card }};border:{{ t.cardBd }};box-shadow:{{ t.cardSh }};cursor:pointer;color:{{ t.text }};">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M14 21h3M21 18v3"/></svg>
+          <span style="font-size:13px;font-weight:600;">바코드 스캔</span>
+        </div>
+        <div onClick="{{ onScanDate }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;padding:18px 8px;border-radius:16px;background:{{ t.card }};border:{{ t.cardBd }};box-shadow:{{ t.cardSh }};cursor:pointer;color:{{ t.text }};">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>
+          <span style="font-size:13px;font-weight:600;">유통기한 촬영</span>
+        </div>
+      </div>
+
+      <div style="padding:16px 16px 0;">
+        <div style="font-size:13px;font-weight:600;color:{{ t.sub }};margin-bottom:8px;">식품 이름</div>
+        <input value="{{ addName }}" onChange="{{ onName }}" placeholder="예: 우유" style="width:100%;box-sizing:border-box;height:50px;padding:0 16px;border-radius:14px;font-size:15px;background:{{ t.fieldBg }};border:{{ t.fieldBd }};color:{{ t.text }};outline:none;font-family:inherit;" />
+      </div>
+
+      <div style="padding:16px 16px 0;">
+        <div style="font-size:13px;font-weight:600;color:{{ t.sub }};margin-bottom:8px;">유통기한</div>
+        <div onClick="{{ onPickDate }}" style="height:50px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-radius:14px;background:{{ t.fieldBg }};border:{{ t.fieldBd }};color:{{ t.text }};cursor:pointer;">
+          <span style="font-size:15px;font-weight:600;">{{ addExpiry }}</span>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        </div>
+      </div>
+
+      <div style="padding:18px 16px 0;">
+        <div style="font-size:13px;font-weight:600;color:{{ t.sub }};margin-bottom:10px;">분류</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <sc-for list="{{ catChips }}" as="chip" hint-placeholder-count="9">
+            <div onClick="{{ chip.onClick }}" style="padding:8px 13px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;background:{{ chip.bg }};color:{{ chip.fg }};border:{{ chip.bd }};">{{ chip.label }}</div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="padding:18px 16px 0;">
+        <div style="font-size:13px;font-weight:600;color:{{ t.sub }};margin-bottom:10px;">보관 위치</div>
+        <div style="display:flex;gap:8px;">
+          <sc-for list="{{ storeChips }}" as="chip" hint-placeholder-count="3">
+            <div onClick="{{ chip.onClick }}" style="padding:8px 16px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;background:{{ chip.bg }};color:{{ chip.fg }};border:{{ chip.bd }};">{{ chip.label }}</div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="padding:22px 16px 0;display:flex;align-items:center;">
+        <span style="font-size:14px;font-weight:600;color:{{ t.text }};">수량</span>
+        <div style="flex:1;"></div>
+        <div onClick="{{ onQtyDown }}" style="width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:12px;border:{{ t.cardBd }};background:{{ t.card }};color:{{ t.text }};cursor:pointer;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg>
+        </div>
+        <span style="width:48px;text-align:center;font-size:20px;font-weight:700;color:{{ t.text }};">{{ addQty }}</span>
+        <div onClick="{{ onQtyUp }}" style="width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:12px;border:{{ t.cardBd }};background:{{ t.card }};color:{{ t.text }};cursor:pointer;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+      </div>
+
+      <div style="padding:18px 16px 0;">
+        <div style="font-size:13px;font-weight:600;color:{{ t.sub }};margin-bottom:8px;">메모 (선택)</div>
+        <textarea onChange="{{ onMemo }}" placeholder="예: 개봉함, 빨리 먹기" style="width:100%;box-sizing:border-box;height:74px;padding:12px 16px;border-radius:14px;font-size:14.5px;background:{{ t.fieldBg }};border:{{ t.fieldBd }};color:{{ t.text }};outline:none;font-family:inherit;resize:none;"></textarea>
+      </div>
+
+      <div onClick="{{ onSave }}" style="margin:26px 16px 30px;height:54px;border-radius:16px;background:{{ t.fab }};color:{{ t.onFab }};display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:16px;cursor:pointer;box-shadow:{{ t.cardSh }};">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        저장
+      </div>
+    </sc-if>
+
+  </div>
+
+  <!-- FAB (home) -->
+  <sc-if value="{{ scrHome }}" hint-placeholder-val="{{ true }}">
+    <div onClick="{{ onAdd }}" style="position:absolute;right:18px;bottom:34px;z-index:20;display:flex;align-items:center;gap:8px;padding:15px 20px;border-radius:18px;background:{{ t.fab }};color:{{ t.onFab }};font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 12px 26px rgba(0,0,0,0.24);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      식품 추가
+    </div>
+  </sc-if>
+
+  <!-- SCAN overlay -->
+  <sc-if value="{{ scrScan }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:40;background:#0A0D0C;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 36%, #28352C, #0A0D0C 72%);"></div>
+      <div style="position:relative;display:flex;align-items:center;gap:6px;padding:46px 16px 8px;color:#fff;">
+        <div onClick="{{ onScanBack }}" style="width:40px;height:40px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer;color:#fff;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </div>
+        <span style="font-weight:700;font-size:17px;">{{ scanTitle }}</span>
+      </div>
+      <div style="position:relative;flex:1;display:flex;align-items:center;justify-content:center;">
+        <div style="position:relative;width:74%;height:{{ scanReticleH }};">
+          <div style="position:absolute;top:0;left:0;width:30px;height:30px;border-top:4px solid #B6F24D;border-left:4px solid #B6F24D;border-top-left-radius:14px;"></div>
+          <div style="position:absolute;top:0;right:0;width:30px;height:30px;border-top:4px solid #B6F24D;border-right:4px solid #B6F24D;border-top-right-radius:14px;"></div>
+          <div style="position:absolute;bottom:0;left:0;width:30px;height:30px;border-bottom:4px solid #B6F24D;border-left:4px solid #B6F24D;border-bottom-left-radius:14px;"></div>
+          <div style="position:absolute;bottom:0;right:0;width:30px;height:30px;border-bottom:4px solid #B6F24D;border-right:4px solid #B6F24D;border-bottom-right-radius:14px;"></div>
+          <div style="position:absolute;left:6%;right:6%;height:2px;background:#B6F24D;box-shadow:0 0 14px 2px #B6F24D;border-radius:2px;animation:scanmove 2.2s ease-in-out infinite;"></div>
+        </div>
+      </div>
+      <div style="position:relative;padding:0 0 44px;display:flex;flex-direction:column;align-items:center;gap:18px;">
+        <div style="font-size:13.5px;color:rgba(255,255,255,0.82);padding:0 30px;text-align:center;line-height:1.5;">{{ scanHint }}</div>
+        <div onClick="{{ onCapture }}" style="width:74px;height:74px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,0.4);cursor:pointer;"></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- NOTIFICATION overlay -->
+  <sc-if value="{{ showNotif }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onCloseNotif }}" style="position:absolute;inset:0;z-index:50;background:{{ t.scrim }};">
+      <div onClick="{{ onOpenNotifItem }}" style="margin:50px 14px 0;padding:16px;border-radius:22px;background:{{ t.card }};border:{{ t.cardBd }};box-shadow:0 16px 44px rgba(0,0,0,0.32);cursor:pointer;animation:notifIn .36s cubic-bezier(.2,.85,.2,1);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;">
+          <span style="font-size:16px;">{{ t.iconEmoji }}</span>
+          <span style="font-size:12px;font-weight:600;color:{{ t.sub }};">냉장고 지킴이 · 지금</span>
+          <div style="flex:1;"></div>
+          <span style="font-size:11px;color:{{ t.faint }};">유통기한 알림</span>
+        </div>
+        <div style="font-weight:800;font-size:16px;color:{{ t.text }};margin-bottom:5px;">시금치, 오늘까지예요 🥬</div>
+        <div style="font-size:13.5px;line-height:1.55;color:{{ t.sub }};">유통기한이 오늘 끝나요. 잊지 말고 오늘 안에 챙겨 드세요. 탭하면 상세로 이동해요.</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- TOAST -->
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:0;right:0;bottom:62px;z-index:60;display:flex;justify-content:center;animation:toastIn .25s ease;">
+      <div style="padding:12px 20px;border-radius:14px;background:rgba(18,26,20,0.94);color:#fff;font-size:13.5px;font-weight:600;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,0.32);">{{ toastMsg }}</div>
+    </div>
+  </sc-if>
+
+  <!-- gesture bar -->
+  <div style="position:absolute;left:0;right:0;bottom:8px;z-index:5;display:flex;justify-content:center;pointer-events:none;">
+    <div style="width:130px;height:5px;border-radius:3px;background:{{ t.gesture }};"></div>
+  </div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:392,&quot;height&quot;:812},&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;fresh&quot;,&quot;midnight&quot;,&quot;pop&quot;],&quot;default&quot;:&quot;fresh&quot;,&quot;tsType&quot;:&quot;'fresh'|'midnight'|'pop'&quot;},&quot;start&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;home&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;startSel&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;startFilter&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;startNotif&quot;:{&quot;editor&quot;:null,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;startScan&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;barcode&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { screen:'home', filter:null, selId:null, showNotif:false, scanMode:'barcode', toast:null, addName:'', addMemo:'', addCat:'유제품', addStore:'냉장', addQty:1 };
+
+  themeDefs() {
+    return {
+      fresh: {
+        bezel:'#101410', bg:'#EDF2EA', card:'#FFFFFF', cardBd:'1px solid rgba(20,40,25,0.07)',
+        text:'#15231A', sub:'#5E6C61', faint:'#93A096',
+        accent:'#1F7A3D', accentSoft:'#E4F1E7', onAccent:'#FFFFFF',
+        chipBg:'#FFFFFF', chipFg:'#3A463E', chipActiveBg:'#1F7A3D', chipActiveFg:'#FFFFFF', chipBd:'1px solid rgba(20,40,25,0.10)',
+        fab:'#1F7A3D', onFab:'#FFFFFF',
+        fresh_bg:'#E4F1E7', fresh_fg:'#1F7A3D', soon_bg:'#FFF0D9', soon_fg:'#B96309', exp_bg:'#FBE4E1', exp_fg:'#C0392F',
+        radius:'24px', cardSh:'0 6px 18px rgba(28,60,38,0.06)', statusColor:'#15231A',
+        gesture:'rgba(21,35,26,0.22)', divider:'rgba(20,40,25,0.07)', fieldBg:'#FFFFFF', fieldBd:'1px solid rgba(20,40,25,0.14)',
+        scrim:'rgba(0,0,0,0.35)', iconEmoji:'🌿'
+      },
+      midnight: {
+        bezel:'#05080A', bg:'#0E1311', card:'#19211C', cardBd:'1px solid rgba(255,255,255,0.07)',
+        text:'#EAF1EC', sub:'#9AA89F', faint:'#647067',
+        accent:'#B6F24D', accentSoft:'rgba(182,242,77,0.14)', onAccent:'#0E1311',
+        chipBg:'#19211C', chipFg:'#C3D0C7', chipActiveBg:'#B6F24D', chipActiveFg:'#0E1311', chipBd:'1px solid rgba(255,255,255,0.08)',
+        fab:'#B6F24D', onFab:'#0E1311',
+        fresh_bg:'rgba(182,242,77,0.15)', fresh_fg:'#C7F56C', soon_bg:'rgba(255,184,77,0.16)', soon_fg:'#FFC56B', exp_bg:'rgba(255,107,97,0.16)', exp_fg:'#FF9087',
+        radius:'24px', cardSh:'0 8px 24px rgba(0,0,0,0.45)', statusColor:'#EAF1EC',
+        gesture:'rgba(255,255,255,0.30)', divider:'rgba(255,255,255,0.07)', fieldBg:'#19211C', fieldBd:'1px solid rgba(255,255,255,0.10)',
+        scrim:'rgba(0,0,0,0.5)', iconEmoji:'🌙'
+      },
+      pop: {
+        bezel:'#15231A', bg:'#FCEFD9', card:'#FFFFFF', cardBd:'2px solid #15231A',
+        text:'#15231A', sub:'#6E5C3E', faint:'#A08A63',
+        accent:'#138A3E', accentSoft:'#CFF3D8', onAccent:'#FFFFFF',
+        chipBg:'#FFFFFF', chipFg:'#15231A', chipActiveBg:'#15231A', chipActiveFg:'#FCEFD9', chipBd:'2px solid #15231A',
+        fab:'#15231A', onFab:'#FFE08A',
+        fresh_bg:'#BFF0CB', fresh_fg:'#0B5E2A', soon_bg:'#FFD480', soon_fg:'#7A3E00', exp_bg:'#FFB0A8', exp_fg:'#7A140C',
+        radius:'18px', cardSh:'4px 4px 0 #15231A', statusColor:'#15231A',
+        gesture:'#15231A', divider:'rgba(21,35,26,0.14)', fieldBg:'#FFFFFF', fieldBd:'2px solid #15231A',
+        scrim:'rgba(21,35,26,0.42)', iconEmoji:'🧃'
+      }
+    };
+  }
+
+  baseItems() {
+    return [
+      {id:1, name:'유기농 우유', emoji:'🥛', cat:'유제품', store:'냉장', days:2, qty:1, memo:'개봉함 · 빨리 드세요', barcode:'8801056012345', added:5},
+      {id:2, name:'시금치', emoji:'🥬', cat:'채소', store:'냉장', days:0, qty:1, memo:'', barcode:null, added:3},
+      {id:3, name:'노르웨이 연어', emoji:'🐟', cat:'수산물', store:'냉장', days:1, qty:1, memo:'스테이크용', barcode:null, added:1},
+      {id:4, name:'그릭 요거트', emoji:'🥛', cat:'유제품', store:'냉장', days:-2, qty:2, memo:'', barcode:'8809123456789', added:9},
+      {id:5, name:'대패 삼겹살', emoji:'🥩', cat:'육류', store:'냉동', days:24, qty:2, memo:'', barcode:null, added:6},
+      {id:6, name:'손만두', emoji:'🥟', cat:'냉동식품', store:'냉동', days:60, qty:1, memo:'', barcode:null, added:10},
+      {id:7, name:'아삭 사과', emoji:'🍎', cat:'과일', store:'냉장', days:9, qty:5, memo:'', barcode:null, added:4},
+      {id:8, name:'구워먹는 치즈', emoji:'🧀', cat:'유제품', store:'냉장', days:6, qty:1, memo:'', barcode:null, added:7}
+    ];
+  }
+
+  go(screen, id) { const ns = { screen, showNotif:false }; if (id != null) ns.selId = id; this.setState(ns); }
+  setFilter(f) { this.setState({ filter:f }); }
+  openScan(mode) { this.setState({ screen:'scan', scanMode:mode }); }
+  toast(msg) { this.setState({ toast:msg }); clearTimeout(this._tt); this._tt = setTimeout(() => this.setState({ toast:null }), 2000); }
+
+  _dot(d) { return d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0'); }
+
+  capture() {
+    if (this.state.scanMode === 'barcode') {
+      this.setState({ screen:'add', addName: this.state.addName || '상품 (8801056012345)' });
+      this.toast('바코드 인식 완료 · 8801056012345');
+    } else {
+      const d = new Date(); d.setDate(d.getDate()+7);
+      this.setState({ screen:'add' });
+      this.toast('유통기한 인식 · ' + this._dot(d));
+    }
+  }
+  save() { this.setState({ screen:'home', addName:'', addMemo:'', addQty:1 }); this.toast('냉장고에 저장했어요 ✓'); }
+  remove() { this.setState({ screen:'home' }); this.toast('목록에서 제거했어요'); }
+
+  renderVals() {
+    const self = this;
+    if (!this._inited) {
+      this._inited = true;
+      const p = this.props;
+      if (p.start) this.state.screen = p.start;
+      if (p.startSel != null) this.state.selId = Number(p.startSel);
+      if (p.startFilter) this.state.filter = p.startFilter;
+      if (p.startNotif) this.state.showNotif = true;
+      if (p.startScan) this.state.scanMode = p.startScan;
+    }
+    const s = this.state;
+    const T = this.themeDefs()[this.props.variant] || this.themeDefs().fresh;
+
+    const today = new Date(); today.setHours(0,0,0,0);
+    const addDays = n => { const d = new Date(today); d.setDate(d.getDate()+n); return d; };
+    const fmtKo = d => new Intl.DateTimeFormat('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'short' }).format(d);
+
+    const decorate = it => {
+      const d = it.days;
+      let status, bb, bf, bt;
+      if (d < 0) { status='expired'; bb=T.exp_bg; bf=T.exp_fg; bt = d===-1 ? '하루 지남' : (-d)+'일 지남'; }
+      else if (d <= 3) { status='soon'; bb=T.soon_bg; bf=T.soon_fg; bt = d===0 ? '오늘까지' : 'D-'+d; }
+      else { status='fresh'; bb=T.fresh_bg; bf=T.fresh_fg; bt = 'D-'+d; }
+      const meta = it.store + ' · ' + it.cat + (it.qty>1 ? ' · '+it.qty+'개' : '');
+      return Object.assign({}, it, { status, badgeBg:bb, badgeFg:bf, badgeText:bt, metaLine:meta, expDate:addDays(d), addedDate:addDays(-it.added), onOpen:() => self.go('detail', it.id) });
+    };
+
+    const items = this.baseItems().map(decorate).sort((a,b) => a.days - b.days);
+    const visible = items.filter(i => !s.filter || i.store === s.filter);
+
+    const total = items.length;
+    const soon = items.filter(i => i.status === 'soon').length;
+    const exp = items.filter(i => i.status === 'expired').length;
+    const stats = [
+      { label:'전체', value:total, fg:T.accent, bg:T.accentSoft },
+      { label:'임박', value:soon, fg:T.soon_fg, bg:T.soon_bg },
+      { label:'만료', value:exp, fg:T.exp_fg, bg:T.exp_bg }
+    ];
+
+    const filters = [[null,'전체'],['냉장','냉장'],['냉동','냉동'],['실온','실온']];
+    const filterChips = filters.map(([k,label]) => {
+      const active = s.filter === k;
+      return { label, onClick:() => self.setFilter(k), bg: active?T.chipActiveBg:T.chipBg, fg: active?T.chipActiveFg:T.chipFg, bd:T.chipBd };
+    });
+
+    const cats = [['채소','🥬'],['과일','🍎'],['육류','🥩'],['수산물','🐟'],['유제품','🥛'],['음료','🥤'],['양념','🧂'],['냉동식품','🧊'],['기타','🛒']];
+    const catChips = cats.map(([label,emoji]) => {
+      const active = s.addCat === label;
+      return { label: emoji+' '+label, onClick:() => self.setState({ addCat:label }), bg: active?T.chipActiveBg:T.chipBg, fg: active?T.chipActiveFg:T.chipFg, bd:T.chipBd };
+    });
+    const storeChips = ['냉장','냉동','실온'].map(label => {
+      const active = s.addStore === label;
+      return { label, onClick:() => self.setState({ addStore:label }), bg: active?T.chipActiveBg:T.chipBg, fg: active?T.chipActiveFg:T.chipFg, bd:T.chipBd };
+    });
+
+    const sel = items.find(i => i.id === s.selId) || null;
+    let tiles = [];
+    if (sel) {
+      tiles = [
+        { label:'유통기한', value: fmtKo(sel.expDate) },
+        { label:'보관 위치', value: sel.store },
+        { label:'분류', value: sel.cat },
+        { label:'수량', value: sel.qty+'개' },
+        { label:'등록일', value: fmtKo(sel.addedDate) }
+      ];
+      if (sel.barcode) tiles.push({ label:'바코드', value: sel.barcode });
+      if (sel.memo) tiles.push({ label:'메모', value: sel.memo });
+      tiles = tiles.map((row,i) => Object.assign({}, row, { bd: i === tiles.length-1 ? 'none' : '1px solid '+T.divider }));
+    }
+
+    const addExpiry = this._dot(addDays(7));
+
+    return {
+      t: T,
+      scrHome: s.screen==='home', scrDetail: s.screen==='detail', scrAdd: s.screen==='add', scrScan: s.screen==='scan',
+      visible, stats, filterChips, catChips, storeChips,
+      isEmpty: visible.length===0, hasItems: visible.length>0,
+      sel, tiles,
+      addName: s.addName, addQty: s.addQty, addExpiry,
+      showNotif: s.showNotif, hasToast: !!s.toast, toastMsg: s.toast,
+      scanTitle: s.scanMode==='barcode' ? '바코드 스캔' : '유통기한 촬영',
+      scanHint: s.scanMode==='barcode' ? '상품 바코드를 사각형 안에 맞춰주세요' : '포장지의 유통기한 날짜를 비춰주세요',
+      scanReticleH: s.scanMode==='barcode' ? '150px' : '118px',
+      onBell:() => this.setState({ showNotif:true }),
+      onCloseNotif:() => this.setState({ showNotif:false }),
+      onOpenNotifItem:(e) => { if (e && e.stopPropagation) e.stopPropagation(); self.go('detail', 2); },
+      onAdd:() => self.go('add'),
+      onBack:() => self.go('home'),
+      onScanBack:() => self.go('add'),
+      onScanBarcode:() => self.openScan('barcode'),
+      onScanDate:() => self.openScan('date'),
+      onCapture:() => self.capture(),
+      onName:(e) => self.setState({ addName: e.target.value }),
+      onMemo:(e) => self.setState({ addMemo: e.target.value }),
+      onPickDate:() => self.toast('유통기한을 선택했어요'),
+      onQtyUp:() => self.setState(st => ({ addQty: st.addQty+1 })),
+      onQtyDown:() => self.setState(st => ({ addQty: Math.max(1, st.addQty-1) })),
+      onSave:() => self.save(),
+      onRemove:() => self.remove()
+    };
+  }
+}
+</script>
+</body>
+</html>

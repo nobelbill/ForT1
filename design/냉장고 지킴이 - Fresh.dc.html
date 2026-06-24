@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+  body { margin:0; }
+</style>
+</helmet>
+
+<div style="font-family:'Pretendard Variable',Pretendard,-apple-system,sans-serif;box-sizing:border-box;width:max-content;min-width:100%;min-height:100vh;padding:56px 64px;background:#E7E5DF;">
+
+  <div style="max-width:1200px;margin-bottom:40px;">
+    <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;color:#8C8A82;text-transform:uppercase;margin-bottom:10px;">Direction · Fresh</div>
+    <div style="font-size:34px;font-weight:800;letter-spacing:-0.02em;color:#1A1A17;line-height:1.15;">냉장고 지킴이 — 전체 화면</div>
+    <div style="margin-top:12px;font-size:15px;line-height:1.6;color:#5C5A53;max-width:760px;">산뜻한 데이라이트 방향. 각 폰은 해당 화면에서 시작하지만 전부 살아 있어요 — 그대로 탭하며 흐름을 이어갈 수 있습니다.</div>
+  </div>
+
+  <div style="display:flex;gap:48px;align-items:flex-start;">
+
+    <div style="flex:none;width:392px;">
+      <div style="font-size:15px;font-weight:700;color:#1A1A17;margin-bottom:14px;">홈 · 목록 + 요약 + 필터</div>
+      <dc-import name="Phone" variant="fresh" start="home" hint-size="392px,812px" style="width:392px"></dc-import>
+    </div>
+
+    <div style="flex:none;width:392px;">
+      <div style="font-size:15px;font-weight:700;color:#1A1A17;margin-bottom:14px;">식품 상세</div>
+      <dc-import name="Phone" variant="fresh" start="detail" startSel="3" hint-size="392px,812px" style="width:392px"></dc-import>
+    </div>
+
+    <div style="flex:none;width:392px;">
+      <div style="font-size:15px;font-weight:700;color:#1A1A17;margin-bottom:14px;">식품 추가 · 바코드/OCR/수동</div>
+      <dc-import name="Phone" variant="fresh" start="add" hint-size="392px,812px" style="width:392px"></dc-import>
+    </div>
+
+    <div style="flex:none;width:392px;">
+      <div style="font-size:15px;font-weight:700;color:#1A1A17;margin-bottom:14px;">카메라 스캔</div>
+      <dc-import name="Phone" variant="fresh" start="scan" startScan="barcode" hint-size="392px,812px" style="width:392px"></dc-import>
+    </div>
+
+    <div style="flex:none;width:392px;">
+      <div style="font-size:15px;font-weight:700;color:#1A1A17;margin-bottom:14px;">빈 상태 · 실온</div>
+      <dc-import name="Phone" variant="fresh" start="home" startFilter="실온" hint-size="392px,812px" style="width:392px"></dc-import>
+    </div>
+
+    <div style="flex:none;width:392px;">
+      <div style="font-size:15px;font-weight:700;color:#1A1A17;margin-bottom:14px;">유통기한 임박 알림</div>
+      <dc-import name="Phone" variant="fresh" start="home" startNotif="true" hint-size="392px,812px" style="width:392px"></dc-import>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
