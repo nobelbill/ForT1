@@ -35,8 +35,7 @@ class FridgeApp extends StatelessWidget {
       child: MaterialApp(
         title: '냉장고 지킴이',
         debugShowCheckedModeBanner: false,
-        theme: buildTheme(Brightness.light),
-        darkTheme: buildTheme(Brightness.dark),
+        theme: buildTheme(),
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,

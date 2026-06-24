@@ -7,6 +7,7 @@ import '../data/food_repository.dart';
 import '../models/food_item.dart';
 import '../services/barcode_scanner_service.dart';
 import '../services/date_ocr_service.dart';
+import '../theme.dart';
 
 /// 식품 추가 화면. 바코드 스캔 / 유통기한 OCR / 수동 입력을 지원한다.
 class AddItemScreen extends StatefulWidget {
@@ -24,7 +25,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final _nameController = TextEditingController();
   final _memoController = TextEditingController();
 
-  FoodCategory _category = FoodCategory.etc;
+  FoodCategory _category = FoodCategory.dairy;
   StorageLocation _storage = StorageLocation.fridge;
   DateTime _expiry = DateTime.now().add(const Duration(days: 7));
   int _quantity = 1;
@@ -56,7 +57,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
         if (_nameController.text.trim().isEmpty) {
           _nameController.text = '상품 ($code)';
         }
-        _snack('바코드 인식: $code');
+        _snack('바코드 인식 완료 · $code');
       }
     } catch (_) {
       if (mounted) _snack('바코드 인식에 실패했어요.');
@@ -76,7 +77,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
         _snack('날짜를 인식하지 못했어요. 직접 선택해 주세요.');
       } else {
         setState(() => _expiry = result.date!);
-        _snack('유통기한 인식: ${_fmt(result.date!)}');
+        _snack('유통기한 인식 · ${_fmt(result.date!)}');
       }
     } catch (_) {
       if (mounted) _snack('유통기한 인식에 실패했어요.');
@@ -116,20 +117,21 @@ class _AddItemScreenState extends State<AddItemScreen> {
     if (mounted) Navigator.of(context).pop();
   }
 
-  void _snack(String msg) => ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text(msg)));
+  void _snack(String msg) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 
   String _fmt(DateTime d) => DateFormat('yyyy.MM.dd').format(d);
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('식품 추가')),
+      appBar: AppBar(
+        title: const Text('식품 추가',
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+      ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 32),
         children: [
-          // AI 빠른 입력
           Row(
             children: [
               Expanded(
@@ -143,7 +145,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _ScanButton(
-                  icon: Icons.document_scanner_outlined,
+                  icon: Icons.center_focus_weak,
                   label: '유통기한 촬영',
                   busy: _scanningDate,
                   onPressed: _scanDate,
@@ -154,107 +156,175 @@ class _AddItemScreenState extends State<AddItemScreen> {
           if (_barcode != null) ...[
             const SizedBox(height: 8),
             Text('바코드: $_barcode',
-                style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant)),
+                style: const TextStyle(fontSize: 12.5, color: FreshTokens.sub)),
           ],
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
-          TextField(
-            controller: _nameController,
-            decoration: const InputDecoration(
-              labelText: '식품 이름',
-              hintText: '예: 우유',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 20),
+          const _FieldLabel('식품 이름'),
+          _TextField(controller: _nameController, hint: '예: 우유'),
+          const SizedBox(height: 18),
 
-          // 유통기한
+          const _FieldLabel('유통기한'),
           InkWell(
             onTap: _pickDate,
-            borderRadius: BorderRadius.circular(12),
-            child: InputDecorator(
-              decoration: const InputDecoration(
-                labelText: '유통기한',
-                border: OutlineInputBorder(),
-                suffixIcon: Icon(Icons.calendar_today_outlined),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: _fieldDecoration(),
+              child: Row(
+                children: [
+                  Text(_fmt(_expiry),
+                      style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: FreshTokens.text)),
+                  const Spacer(),
+                  const Icon(Icons.calendar_today_outlined,
+                      size: 19, color: FreshTokens.sub),
+                ],
               ),
-              child: Text(_fmt(_expiry),
-                  style: theme.textTheme.titleMedium),
             ),
           ),
           const SizedBox(height: 20),
 
-          Text('분류', style: theme.textTheme.titleSmall),
-          const SizedBox(height: 8),
+          const _FieldLabel('분류'),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: FoodCategory.values.map((c) {
-              return ChoiceChip(
-                label: Text('${c.emoji} ${c.label}'),
-                selected: _category == c,
-                onSelected: (_) => setState(() => _category = c),
-              );
-            }).toList(),
+            children: FoodCategory.values
+                .map((c) => _ChoiceChip(
+                      label: '${c.emoji} ${c.label}',
+                      active: _category == c,
+                      onTap: () => setState(() => _category = c),
+                    ))
+                .toList(),
           ),
           const SizedBox(height: 20),
 
-          Text('보관 위치', style: theme.textTheme.titleSmall),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: StorageLocation.values.map((s) {
-              return ChoiceChip(
-                avatar: Icon(s.icon, size: 18),
-                label: Text(s.label),
-                selected: _storage == s,
-                onSelected: (_) => setState(() => _storage = s),
-              );
-            }).toList(),
+          const _FieldLabel('보관 위치'),
+          Row(
+            children: StorageLocation.values
+                .map((s) => Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: _ChoiceChip(
+                        label: s.label,
+                        active: _storage == s,
+                        onTap: () => setState(() => _storage = s),
+                      ),
+                    ))
+                .toList(),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 22),
 
           Row(
             children: [
-              Text('수량', style: theme.textTheme.titleSmall),
+              const Text('수량',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: FreshTokens.text)),
               const Spacer(),
-              IconButton.outlined(
-                onPressed: _quantity > 1
+              _StepperButton(
+                icon: Icons.remove,
+                onTap: _quantity > 1
                     ? () => setState(() => _quantity--)
                     : null,
-                icon: const Icon(Icons.remove),
               ),
               SizedBox(
-                width: 44,
+                width: 48,
                 child: Text('$_quantity',
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.titleLarge),
+                    style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: FreshTokens.text)),
               ),
-              IconButton.outlined(
-                onPressed: () => setState(() => _quantity++),
-                icon: const Icon(Icons.add),
+              _StepperButton(
+                icon: Icons.add,
+                onTap: () => setState(() => _quantity++),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
 
-          TextField(
+          const _FieldLabel('메모 (선택)'),
+          _TextField(
             controller: _memoController,
+            hint: '예: 개봉함, 빨리 먹기',
             maxLines: 2,
-            decoration: const InputDecoration(
-              labelText: '메모 (선택)',
-              border: OutlineInputBorder(),
-            ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 26),
 
           FilledButton.icon(
             onPressed: _save,
-            icon: const Icon(Icons.check),
+            icon: const Icon(Icons.check, weight: 700),
             label: const Text('저장'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+BoxDecoration _fieldDecoration() => BoxDecoration(
+      color: FreshTokens.fieldBg,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: FreshTokens.fieldBorder),
+    );
+
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, left: 2),
+      child: Text(text,
+          style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: FreshTokens.sub)),
+    );
+  }
+}
+
+class _TextField extends StatelessWidget {
+  const _TextField({
+    required this.controller,
+    required this.hint,
+    this.maxLines = 1,
+  });
+  final TextEditingController controller;
+  final String hint;
+  final int maxLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      style: const TextStyle(fontSize: 15, color: FreshTokens.text),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: FreshTokens.faint),
+        filled: true,
+        fillColor: FreshTokens.fieldBg,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: FreshTokens.fieldBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: FreshTokens.fieldBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: FreshTokens.accent, width: 1.6),
+        ),
       ),
     );
   }
@@ -275,25 +345,94 @@ class _ScanButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: busy ? null : onPressed,
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return InkWell(
+      onTap: busy ? null : onPressed,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: FreshTokens.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: FreshTokens.cardBorder),
+          boxShadow: const [FreshTokens.cardShadow],
+        ),
+        child: Column(
+          children: [
+            busy
+                ? const SizedBox(
+                    width: 26,
+                    height: 26,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: FreshTokens.accent),
+                  )
+                : Icon(icon, size: 26, color: FreshTokens.text),
+            const SizedBox(height: 9),
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: FreshTokens.text)),
+          ],
+        ),
       ),
-      child: Column(
-        children: [
-          busy
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Icon(icon, size: 24),
-          const SizedBox(height: 8),
-          Text(label),
-        ],
+    );
+  }
+}
+
+class _ChoiceChip extends StatelessWidget {
+  const _ChoiceChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          color: active ? FreshTokens.chipActiveBg : FreshTokens.chipBg,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: FreshTokens.chipBorder),
+        ),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color:
+                    active ? FreshTokens.chipActiveFg : FreshTokens.chipFg)),
+      ),
+    );
+  }
+}
+
+class _StepperButton extends StatelessWidget {
+  const _StepperButton({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: FreshTokens.card,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FreshTokens.cardBorder),
+        ),
+        child: Icon(icon,
+            size: 18,
+            color: enabled ? FreshTokens.text : FreshTokens.faint),
       ),
     );
   }

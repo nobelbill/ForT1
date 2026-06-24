@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../data/food_repository.dart';
 import '../models/food_item.dart';
+import '../theme.dart';
 import '../widgets/food_card.dart';
 
 /// 식품 상세 화면. 정보 확인 및 삭제(소진/폐기) 처리.
@@ -14,71 +15,75 @@ class ItemDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final df = DateFormat('yyyy년 M월 d일 (E)', 'ko');
 
+    final tiles = <(String, String)>[
+      ('유통기한', df.format(item.expiryDate)),
+      ('보관 위치', item.storage.label),
+      ('분류', item.category.label),
+      ('수량', '${item.quantity}개'),
+      ('등록일', df.format(item.addedDate)),
+      if (item.barcode != null) ('바코드', item.barcode!),
+      if (item.memo.isNotEmpty) ('메모', item.memo),
+    ];
+
     return Scaffold(
-      appBar: AppBar(title: Text(item.name)),
+      appBar: AppBar(
+        title: Text(item.name,
+            style: const TextStyle(
+                fontWeight: FontWeight.w700, fontSize: 17)),
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 30),
         children: [
-          Center(
+          Column(
+            children: [
+              Container(
+                width: 98,
+                height: 98,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: FreshTokens.accentSoft,
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: Text(item.category.emoji,
+                    style: const TextStyle(fontSize: 52)),
+              ),
+              const SizedBox(height: 12),
+              Text(item.name,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 22,
+                      color: FreshTokens.text)),
+              const SizedBox(height: 12),
+              DDayBadge(item: item, large: true),
+            ],
+          ),
+          const SizedBox(height: 22),
+          Container(
+            decoration: BoxDecoration(
+              color: FreshTokens.card,
+              borderRadius: BorderRadius.circular(FreshTokens.cardRadius),
+              border: Border.all(color: FreshTokens.cardBorder),
+              boxShadow: const [FreshTokens.cardShadow],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Column(
               children: [
-                Text(item.category.emoji,
-                    style: const TextStyle(fontSize: 64)),
-                const SizedBox(height: 8),
-                Text(item.name,
-                    style: theme.textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 12),
-                DDayBadge(item: item),
+                for (var i = 0; i < tiles.length; i++)
+                  _InfoRow(
+                    label: tiles[i].$1,
+                    value: tiles[i].$2,
+                    showDivider: i != tiles.length - 1,
+                  ),
               ],
             ),
           ),
-          const SizedBox(height: 28),
-          _InfoTile(
-            icon: Icons.event_busy_outlined,
-            label: '유통기한',
-            value: df.format(item.expiryDate),
-          ),
-          _InfoTile(
-            icon: item.storage.icon,
-            label: '보관 위치',
-            value: item.storage.label,
-          ),
-          _InfoTile(
-            icon: Icons.category_outlined,
-            label: '분류',
-            value: item.category.label,
-          ),
-          _InfoTile(
-            icon: Icons.tag,
-            label: '수량',
-            value: '${item.quantity}개',
-          ),
-          _InfoTile(
-            icon: Icons.event_available_outlined,
-            label: '등록일',
-            value: df.format(item.addedDate),
-          ),
-          if (item.barcode != null)
-            _InfoTile(
-              icon: Icons.qr_code,
-              label: '바코드',
-              value: item.barcode!,
-            ),
-          if (item.memo.isNotEmpty)
-            _InfoTile(
-              icon: Icons.sticky_note_2_outlined,
-              label: '메모',
-              value: item.memo,
-            ),
-          const SizedBox(height: 28),
-          FilledButton.tonalIcon(
-            onPressed: () => _confirmDelete(context),
-            icon: const Icon(Icons.delete_outline),
-            label: const Text('소진 / 삭제'),
+          const SizedBox(height: 22),
+          _SoftButton(
+            label: '소진 / 삭제',
+            icon: Icons.delete_outline,
+            onTap: () => _confirmDelete(context),
           ),
         ],
       ),
@@ -89,6 +94,7 @@ class ItemDetailScreen extends StatelessWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: FreshTokens.card,
         title: const Text('삭제할까요?'),
         content: Text('"${item.name}"을(를) 목록에서 제거합니다.'),
         actions: [
@@ -109,40 +115,82 @@ class ItemDetailScreen extends StatelessWidget {
   }
 }
 
-class _InfoTile extends StatelessWidget {
-  const _InfoTile({
-    required this.icon,
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
     required this.label,
     required this.value,
+    required this.showDivider,
   });
-
-  final IconData icon;
   final String label;
   final String value;
+  final bool showDivider;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+    return Container(
+      decoration: BoxDecoration(
+        border: showDivider
+            ? const Border(
+                bottom: BorderSide(color: FreshTokens.divider))
+            : null,
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: 14),
           Text(label,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              style: const TextStyle(fontSize: 13.5, color: FreshTokens.sub)),
           const SizedBox(width: 16),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: theme.textTheme.bodyLarge
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w600,
+                  color: FreshTokens.text),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SoftButton extends StatelessWidget {
+  const _SoftButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        height: 52,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: FreshTokens.accentSoft,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 19, color: FreshTokens.accent),
+            const SizedBox(width: 8),
+            Text(label,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: FreshTokens.accent)),
+          ],
+        ),
       ),
     );
   }
