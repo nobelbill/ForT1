@@ -7,6 +7,7 @@ import '../theme.dart';
 import '../widgets/food_card.dart';
 import 'add_item_screen.dart';
 import 'item_detail_screen.dart';
+import 'recipe_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -107,6 +108,13 @@ class _Header extends StatelessWidget {
             ),
           ),
           const Spacer(),
+          _CircleButton(
+            icon: Icons.auto_awesome,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const RecipeScreen()),
+            ),
+          ),
+          const SizedBox(width: 8),
           _BellButton(
             hasAlert: hasAlert,
             onTap: () => _showReminders(context, repo),
@@ -162,6 +170,31 @@ class _Header extends StatelessWidget {
                   )),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _CircleButton extends StatelessWidget {
+  const _CircleButton({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        width: 40,
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: FreshTokens.card,
+          shape: BoxShape.circle,
+          border: Border.all(color: FreshTokens.cardBorder),
+        ),
+        child: Icon(icon, size: 21, color: FreshTokens.text),
       ),
     );
   }

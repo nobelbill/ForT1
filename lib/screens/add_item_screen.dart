@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../data/food_repository.dart';
 import '../models/food_item.dart';
+import '../services/ai/ai_controller.dart';
 import '../services/barcode_scanner_service.dart';
 import '../services/date_ocr_service.dart';
 import '../theme.dart';
@@ -24,6 +25,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
   final _nameController = TextEditingController();
   final _memoController = TextEditingController();
+  final _nlController = TextEditingController();
+  bool _parsing = false;
 
   FoodCategory _category = FoodCategory.dairy;
   StorageLocation _storage = StorageLocation.fridge;
@@ -40,7 +43,26 @@ class _AddItemScreenState extends State<AddItemScreen> {
     _ocrService.dispose();
     _nameController.dispose();
     _memoController.dispose();
+    _nlController.dispose();
     super.dispose();
+  }
+
+  Future<void> _parseNaturalLanguage() async {
+    final text = _nlController.text.trim();
+    if (text.isEmpty) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _parsing = true);
+    final parsed = await context.read<AiController>().assistant.parseFood(text);
+    if (!mounted) return;
+    setState(() {
+      _nameController.text = parsed.name;
+      _quantity = parsed.quantity;
+      if (parsed.storage != null) _storage = parsed.storage!;
+      if (parsed.category != null) _category = parsed.category!;
+      if (parsed.expiryDate != null) _expiry = parsed.expiryDate!;
+      _parsing = false;
+    });
+    _snack('입력을 분석해 폼을 채웠어요. 내용을 확인해 주세요.');
   }
 
   Future<void> _scanBarcode() async {
@@ -132,6 +154,12 @@ class _AddItemScreenState extends State<AddItemScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 6, 16, 32),
         children: [
+          _NaturalLanguageBox(
+            controller: _nlController,
+            busy: _parsing,
+            onSubmit: _parseNaturalLanguage,
+          ),
+          const SizedBox(height: 18),
           Row(
             children: [
               Expanded(
@@ -325,6 +353,104 @@ class _TextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: FreshTokens.accent, width: 1.6),
         ),
+      ),
+    );
+  }
+}
+
+class _NaturalLanguageBox extends StatelessWidget {
+  const _NaturalLanguageBox({
+    required this.controller,
+    required this.busy,
+    required this.onSubmit,
+  });
+
+  final TextEditingController controller;
+  final bool busy;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: FreshTokens.accentSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: FreshTokens.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.auto_awesome, size: 18, color: FreshTokens.accent),
+              SizedBox(width: 7),
+              Text('AI로 빠르게 입력',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: FreshTokens.text)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text('예: "냉동 삼겹살 2팩 12월 1일" 또는 "내일까지 우유"',
+              style: TextStyle(fontSize: 12, color: FreshTokens.sub)),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  onSubmitted: (_) => onSubmit(),
+                  style: const TextStyle(fontSize: 15, color: FreshTokens.text),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    filled: true,
+                    fillColor: FreshTokens.fieldBg,
+                    hintText: '문장으로 입력',
+                    hintStyle: const TextStyle(color: FreshTokens.faint),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          const BorderSide(color: FreshTokens.fieldBorder),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          const BorderSide(color: FreshTokens.fieldBorder),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          const BorderSide(color: FreshTokens.accent, width: 1.6),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 44,
+                child: FilledButton(
+                  onPressed: busy ? null : onSubmit,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(56, 44),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                  child: busy
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('채우기'),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
