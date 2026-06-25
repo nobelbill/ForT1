@@ -10,6 +10,8 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // flutter_local_notifications 예약 알림에 필요
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -42,4 +44,9 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // core library desugaring (flutter_local_notifications 요구, 2.1.4 이상)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
