@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 import 'data/dev_seed.dart';
 import 'data/food_database.dart';
 import 'data/food_repository.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_shell.dart';
 import 'services/ai/ai_controller.dart';
 import 'services/notification_service.dart';
 import 'theme.dart';
@@ -61,7 +61,7 @@ class FridgeApp extends StatelessWidget {
         ],
         supportedLocales: const [Locale('ko'), Locale('en')],
         locale: const Locale('ko'),
-        home: const HomeScreen(),
+        home: const MainShell(),
       ),
     );
   }

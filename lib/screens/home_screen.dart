@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../data/food_repository.dart';
@@ -7,7 +8,6 @@ import '../theme.dart';
 import '../widgets/food_card.dart';
 import 'add_item_screen.dart';
 import 'item_detail_screen.dart';
-import 'recipe_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,120 +20,101 @@ class _HomeScreenState extends State<HomeScreen> {
   StorageLocation? _filter;
 
   void _openItem(FoodItem item) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ItemDetailScreen(item: item)),
-    );
+    HapticFeedback.selectionClick();
+    Navigator.of(context).push(_slideRoute(ItemDetailScreen(item: item)));
+  }
+
+  void _openAdd() {
+    HapticFeedback.lightImpact();
+    Navigator.of(context).push(_slideRoute(const AddItemScreen()));
   }
 
   @override
   Widget build(BuildContext context) {
     final repo = context.watch<FoodRepository>();
     final items = repo.byStorage(_filter);
+    final hasAlert = repo.soonCount > 0 || repo.expiredCount > 0;
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const AddItemScreen()),
-        ),
+        onPressed: _openAdd,
         backgroundColor: FreshTokens.fab,
         foregroundColor: FreshTokens.onFab,
-        elevation: 6,
-        icon: const Icon(Icons.add, weight: 700),
+        elevation: 4,
+        icon: const Icon(Icons.add),
         label: const Text('식품 추가',
             style: TextStyle(fontWeight: FontWeight.w700)),
       ),
-      body: SafeArea(
-        bottom: false,
-        child: repo.loading
-            ? const Center(child: CircularProgressIndicator())
-            : RefreshIndicator(
-                onRefresh: repo.load,
-                child: CustomScrollView(
-                  slivers: [
-                    SliverToBoxAdapter(child: _Header(repo: repo)),
-                    if (repo.items.isNotEmpty)
-                      SliverToBoxAdapter(child: _Stats(repo: repo)),
-                    SliverToBoxAdapter(
-                      child: _FilterBar(
-                        selected: _filter,
-                        onSelected: (f) => setState(() => _filter = f),
+      body: repo.loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: repo.load,
+              child: CustomScrollView(
+                slivers: [
+                  SliverAppBar.large(
+                    pinned: true,
+                    backgroundColor: FreshTokens.bg,
+                    surfaceTintColor: Colors.transparent,
+                    title: const Text('🌿  냉장고 지킴이',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w800, fontSize: 20)),
+                    actions: [
+                      _BellAction(
+                        hasAlert: hasAlert,
+                        onTap: () => _showReminders(repo),
                       ),
+                      const SizedBox(width: 12),
+                    ],
+                  ),
+                  if (repo.items.isNotEmpty)
+                    SliverToBoxAdapter(child: _Stats(repo: repo)),
+                  SliverToBoxAdapter(
+                    child: _FilterBar(
+                      selected: _filter,
+                      onSelected: (f) {
+                        HapticFeedback.selectionClick();
+                        setState(() => _filter = f);
+                      },
                     ),
-                    if (items.isEmpty)
-                      const SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: _EmptyState(),
-                      )
-                    else
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(16, 6, 16, 120),
-                        sliver: SliverList.separated(
-                          itemCount: items.length,
-                          separatorBuilder: (_, _) =>
-                              const SizedBox(height: 10),
-                          itemBuilder: (context, i) => FoodCard(
+                  ),
+                  if (items.isEmpty)
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: _EmptyState(),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 120),
+                      sliver: SliverList.separated(
+                        itemCount: items.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        itemBuilder: (context, i) => _Entrance(
+                          // 필터 전환 시에도 자연스럽게 다시 등장.
+                          key: ValueKey('${_filter?.name}_${items[i].id}'),
+                          index: i,
+                          child: FoodCard(
                             item: items[i],
                             onTap: () => _openItem(items[i]),
                           ),
                         ),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
-      ),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.repo});
-  final FoodRepository repo;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasAlert = repo.soonCount > 0 || repo.expiredCount > 0;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 10, 16, 6),
-      child: Row(
-        children: [
-          const Text(FreshTokens.appEmoji, style: TextStyle(fontSize: 22)),
-          const SizedBox(width: 9),
-          const Text(
-            '냉장고 지킴이',
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 21,
-              letterSpacing: -0.4,
-              color: FreshTokens.text,
             ),
-          ),
-          const Spacer(),
-          _CircleButton(
-            icon: Icons.auto_awesome,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const RecipeScreen()),
-            ),
-          ),
-          const SizedBox(width: 8),
-          _BellButton(
-            hasAlert: hasAlert,
-            onTap: () => _showReminders(context, repo),
-          ),
-        ],
-      ),
     );
   }
 
-  void _showReminders(BuildContext context, FoodRepository repo) {
-    final urgent = repo.items
-        .where((e) => e.status != FreshnessStatus.fresh)
-        .toList();
+  void _showReminders(FoodRepository repo) {
+    HapticFeedback.selectionClick();
+    final urgent =
+        repo.items.where((e) => e.status != FreshnessStatus.fresh).toList();
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: FreshTokens.card,
       showDragHandle: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -162,9 +143,7 @@ class _Header extends StatelessWidget {
                       item: item,
                       onTap: () {
                         Navigator.pop(ctx);
-                        Navigator.of(context).push(MaterialPageRoute(
-                          builder: (_) => ItemDetailScreen(item: item),
-                        ));
+                        _openItem(item);
                       },
                     ),
                   )),
@@ -175,69 +154,116 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _CircleButton extends StatelessWidget {
-  const _CircleButton({required this.icon, required this.onTap});
-  final IconData icon;
-  final VoidCallback onTap;
+/// 오른쪽에서 밀려들어오며 페이드되는 네이티브풍 화면 전환.
+Route<T> _slideRoute<T>(Widget page) {
+  return PageRouteBuilder<T>(
+    transitionDuration: const Duration(milliseconds: 320),
+    reverseTransitionDuration: const Duration(milliseconds: 260),
+    pageBuilder: (_, _, _) => page,
+    transitionsBuilder: (_, animation, _, child) {
+      final curved =
+          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+      return FadeTransition(
+        opacity: curved,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.06, 0),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+/// 리스트 아이템이 처음 나타날 때 살짝 떠오르며 페이드인.
+class _Entrance extends StatefulWidget {
+  const _Entrance({super.key, required this.index, required this.child});
+  final int index;
+  final Widget child;
+
+  @override
+  State<_Entrance> createState() => _EntranceState();
+}
+
+class _EntranceState extends State<_Entrance>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 380),
+  );
+  late final Animation<double> _anim =
+      CurvedAnimation(parent: _c, curve: Curves.easeOutCubic);
+
+  @override
+  void initState() {
+    super.initState();
+    // 인덱스에 따라 살짝씩 늦게 시작(스태거).
+    Future<void>.delayed(
+      Duration(milliseconds: 40 * (widget.index.clamp(0, 8))),
+      () {
+        if (mounted) _c.forward();
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        width: 40,
-        height: 40,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: FreshTokens.card,
-          shape: BoxShape.circle,
-          border: Border.all(color: FreshTokens.cardBorder),
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (context, child) => Opacity(
+        opacity: _anim.value,
+        child: Transform.translate(
+          offset: Offset(0, 14 * (1 - _anim.value)),
+          child: child,
         ),
-        child: Icon(icon, size: 21, color: FreshTokens.text),
       ),
+      child: widget.child,
     );
   }
 }
 
-class _BellButton extends StatelessWidget {
-  const _BellButton({required this.hasAlert, required this.onTap});
+class _BellAction extends StatelessWidget {
+  const _BellAction({required this.hasAlert, required this.onTap});
   final bool hasAlert;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: FreshTokens.card,
-          shape: BoxShape.circle,
-          border: Border.all(color: FreshTokens.cardBorder),
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            const Icon(Icons.notifications_none_rounded,
-                size: 22, color: FreshTokens.text),
-            if (hasAlert)
-              Positioned(
-                top: 9,
-                right: 10,
-                child: Container(
-                  width: 7,
-                  height: 7,
-                  decoration: const BoxDecoration(
-                    color: FreshTokens.expFg,
-                    shape: BoxShape.circle,
-                  ),
+    return IconButton(
+      onPressed: onTap,
+      style: IconButton.styleFrom(
+        backgroundColor: FreshTokens.card,
+        side: const BorderSide(color: FreshTokens.cardBorder),
+      ),
+      icon: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          const Icon(Icons.notifications_none_rounded,
+              size: 22, color: FreshTokens.text),
+          if (hasAlert)
+            Positioned(
+              top: -2,
+              right: -2,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: FreshTokens.expFg,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: FreshTokens.card, width: 1.5),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -250,7 +276,7 @@ class _Stats extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
       child: Row(
         children: [
           _StatCard(
@@ -298,16 +324,21 @@ class _StatCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 6),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
           children: [
-            Text('$value',
-                style: TextStyle(
-                    fontSize: 25,
-                    height: 1,
-                    fontWeight: FontWeight.w800,
-                    color: fg)),
+            TweenAnimationBuilder<int>(
+              tween: IntTween(begin: 0, end: value),
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeOutCubic,
+              builder: (_, v, _) => Text('$v',
+                  style: TextStyle(
+                      fontSize: 25,
+                      height: 1,
+                      fontWeight: FontWeight.w800,
+                      color: fg)),
+            ),
             const SizedBox(height: 6),
             Text(label,
                 style: const TextStyle(
@@ -330,7 +361,7 @@ class _FilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
       child: Row(
         children: [
           _Chip(
@@ -366,12 +397,16 @@ class _Chip extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
           color: active ? FreshTokens.chipActiveBg : FreshTokens.chipBg,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: FreshTokens.chipBorder),
+          border: Border.all(
+              color:
+                  active ? FreshTokens.chipActiveBg : FreshTokens.chipBorder),
         ),
         child: Text(
           label,
