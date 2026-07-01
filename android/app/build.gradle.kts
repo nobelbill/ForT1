@@ -32,6 +32,12 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // ML Kit 텍스트 인식(라틴 전용)의 미사용 스크립트 클래스에 대한
+            // R8 "missing class" 오류를 억제하는 규칙을 적용한다.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
