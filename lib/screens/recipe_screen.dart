@@ -59,7 +59,6 @@ class _RecipeScreenState extends State<RecipeScreen> {
   @override
   Widget build(BuildContext context) {
     final repo = context.watch<FoodRepository>();
-    final ai = context.watch<AiController>();
     final items = _targetItems(repo);
 
     return Scaffold(
@@ -70,7 +69,7 @@ class _RecipeScreenState extends State<RecipeScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          _EngineBanner(ai: ai),
+          const _RecipeInfoBanner(),
           const SizedBox(height: 16),
           const Text('이 재료로 만들어요',
               style: TextStyle(
@@ -136,93 +135,31 @@ class _RecipeScreenState extends State<RecipeScreen> {
   }
 }
 
-class _EngineBanner extends StatelessWidget {
-  const _EngineBanner({required this.ai});
-  final AiController ai;
+class _RecipeInfoBanner extends StatelessWidget {
+  const _RecipeInfoBanner();
 
   @override
   Widget build(BuildContext context) {
-    final ready = ai.modelReady;
-    final downloading = ai.status == AiStatus.downloading;
-
-    final (icon, title, desc) = ready
-        ? (
-            Icons.bolt,
-            '온디바이스 AI 사용 중',
-            '기기 안에서 직접 추론해요. 인터넷·서버 없이 동작합니다.'
-          )
-        : (
-            Icons.tips_and_updates_outlined,
-            '기본 추천 모드',
-            'AI 모델을 설치하면 재료에 딱 맞는 맞춤 레시피를 제안해 드려요.'
-          );
-
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: ready ? FreshTokens.accentSoft : FreshTokens.card,
+        color: FreshTokens.accentSoft,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: FreshTokens.cardBorder),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 20, color: FreshTokens.accent),
-              const SizedBox(width: 8),
-              Text(title,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14.5,
-                      color: FreshTokens.text)),
-            ],
+        children: const [
+          Icon(Icons.tips_and_updates_outlined,
+              size: 20, color: FreshTokens.accent),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '임박한 재료로 만들 수 있는 요리를 제안해요. 오프라인에서 바로 동작합니다.',
+              style: TextStyle(
+                  fontSize: 12.5, height: 1.5, color: FreshTokens.sub),
+            ),
           ),
-          const SizedBox(height: 6),
-          Text(desc,
-              style: const TextStyle(
-                  fontSize: 12.5, height: 1.5, color: FreshTokens.sub)),
-          if (!ready && ai.canDownload) ...[
-            const SizedBox(height: 12),
-            if (downloading)
-              Row(
-                children: [
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  const SizedBox(width: 10),
-                  Text('모델 다운로드 중... ${ai.progress}%',
-                      style: const TextStyle(
-                          fontSize: 13, color: FreshTokens.sub)),
-                ],
-              )
-            else
-              OutlinedButton.icon(
-                onPressed: () => context.read<AiController>().downloadAndLoad(),
-                icon: const Icon(Icons.download, size: 18),
-                label: const Text('AI 모델 설치'),
-              ),
-          ],
-          if (!ready && !ai.canDownload)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                '개발 설정: AiConfig.modelUrl(또는 localModelPath)를 지정하면 모델을 설치할 수 있어요.',
-                style: TextStyle(
-                    fontSize: 11.5,
-                    color: FreshTokens.faint,
-                    fontStyle: FontStyle.italic),
-              ),
-            ),
-          if (ai.status == AiStatus.error && ai.error != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text('오류: ${ai.error}',
-                  style: const TextStyle(
-                      fontSize: 11.5, color: FreshTokens.expFg)),
-            ),
         ],
       ),
     );

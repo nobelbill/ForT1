@@ -46,9 +46,6 @@ dependencies:
   timezone: ^0.11.0
   flutter_localizations:
     sdk: flutter
-  flutter_gemma: ^1.1.1
-  flutter_gemma_mediapipe: ^1.0.2
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

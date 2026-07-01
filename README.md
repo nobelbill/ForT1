@@ -13,10 +13,10 @@
 - ⏰ **유통기한 임박 알림** — 만료 3일 전 오전에 로컬 푸시 알림 (`flutter_local_notifications`)
 - 🚦 **D-day 배지** — 만료(빨강) / 임박(주황) / 여유(초록) 색상 구분, 임박순 자동 정렬
 - 📊 전체 / 임박 / 만료 개수 요약
-- ✨ **온디바이스 LLM (Gemma)** — 완전 오프라인 (`flutter_gemma`)
-  - **AI 레시피 추천** — 임박 식품으로 만들 수 있는 요리를 제안 (음식물 쓰레기 ↓)
+- ✨ **스마트 AI 도우미 (오프라인 규칙기반)**
+  - **레시피 추천** — 임박 식품으로 만들 수 있는 요리를 제안 (음식물 쓰레기 ↓)
   - **자연어 입력** — "냉동 삼겹살 2팩 12월 1일" 한 줄로 폼 자동 완성
-  - 모델 미설치/저사양 기기에서는 **규칙 기반 폴백**으로 동작 (graceful degradation)
+  - `AiAssistant` 인터페이스로 추상화 — 온디바이스 LLM은 툴체인 호환성 정리 후 재도입 예정
 - 💾 **100% 로컬 저장** (sqflite)
 
 ## 아키텍처
@@ -35,12 +35,10 @@ lib/
 │  ├─ date_ocr_service.dart          ML Kit 텍스트 인식 + 날짜 파싱
 │  ├─ notification_service.dart      로컬 알림 예약/취소
 │  └─ ai/
-│     ├─ ai_config.dart       모델 URL/토큰/경로 설정
 │     ├─ ai_models.dart       ParsedFood · 규칙기반 파서 · 프롬프트
 │     ├─ ai_assistant.dart    추상 인터페이스
-│     ├─ stub_assistant.dart  규칙 기반 폴백 구현
-│     ├─ gemma_assistant.dart flutter_gemma(LLM) 구현
-│     └─ ai_controller.dart   모델 생명주기 + 활성 어시스턴트 선택
+│     ├─ stub_assistant.dart  규칙 기반 구현(레시피·자연어)
+│     └─ ai_controller.dart   활성 어시스턴트 선택
 ├─ screens/
 │  ├─ home_screen.dart        목록 + 필터 + 요약 + 레시피/알림 진입
 │  ├─ add_item_screen.dart    추가(자연어/바코드/OCR/수동)
@@ -71,30 +69,14 @@ flutter analyze        # 정적 분석
 flutter test           # 날짜 파서 / 신선도 상태 단위 테스트
 ```
 
-## 온디바이스 LLM 설정 (개발)
+## AI 도우미 (현재: 규칙기반, 오프라인)
 
-레시피 추천 / 자연어 입력은 **Gemma** 모델을 기기에서 직접 구동합니다(`flutter_gemma` + MediaPipe).
-모델 파일(약 0.5~1GB)은 앱/깃에 포함하지 않고 **런타임에 한 번 설치**합니다.
+레시피 추천과 자연어 입력은 `AiAssistant` 인터페이스로 추상화되어 있고, 현재는
+규칙 기반 구현(`StubAssistant`)이 오프라인에서 동작합니다. 서버로 데이터를 보내지 않습니다.
 
-```bash
-# 1) HuggingFace 등에서 받은 .task 모델 URL을 주입해 실행 (권장: Gemma 3 1B int4)
-flutter run --dart-define=GEMMA_MODEL_URL=https://huggingface.co/<repo>/resolve/main/<model>.task
-
-# 게이트된(라이선스 동의 필요) 모델이면 토큰도 함께
-flutter run \
-  --dart-define=GEMMA_MODEL_URL=<url> \
-  --dart-define=HF_TOKEN=hf_xxx
-
-# 2) 또는 모델을 기기에 미리 넣고(adb push) 로컬 경로로 로드 — 재다운로드 없음
-adb push gemma-3-1b-it-int4.task /data/local/tmp/gemma.task
-flutter run --dart-define=GEMMA_MODEL_PATH=/data/local/tmp/gemma.task
-```
-
-설정값은 `lib/services/ai/ai_config.dart` 에서 관리합니다. **URL/경로가 없으면** AI 기능은
-자동으로 규칙 기반 폴백으로 동작하므로 앱은 그대로 실행됩니다.
-
-> iOS 추가 설정: `Podfile` 에 `platform :ios, '16.0'` 와 `use_frameworks! :linkage => :static`,
-> 대형 모델 사용 시 `Runner.entitlements` 메모리 entitlement. (`flutter_gemma` README 참고)
+> 온디바이스 LLM(Gemma/`flutter_gemma`)은 현재 Flutter 3.44의 AGP 9 툴체인과
+> 호환성 이슈가 있어 이번 빌드에서는 제외했습니다. 호환 버전이 정리되면
+> `AiAssistant` 구현(`GemmaAssistant`)만 추가해 다시 붙일 수 있는 구조입니다.
 
 ## 권한
 
@@ -103,4 +85,4 @@ flutter run --dart-define=GEMMA_MODEL_PATH=/data/local/tmp/gemma.task
 
 ## 기술 스택
 
-Flutter 3.44 · Dart 3.12 · ML Kit (Barcode / Text Recognition) · flutter_gemma (on-device LLM, MediaPipe) · sqflite · provider · flutter_local_notifications · timezone · intl
+Flutter 3.44 · Dart 3.12 · ML Kit (Barcode / Text Recognition) · sqflite · provider · flutter_local_notifications · timezone · intl
